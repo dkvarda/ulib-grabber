@@ -12,7 +12,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Ulib\\": "src"
+            "Ulib\\Grabber\\": "src"
         }
     }
 }
