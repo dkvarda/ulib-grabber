@@ -1,0 +1,16 @@
+{
+    "name": "ulib/grabber",
+    "description": "ULIB page grabber",
+    "authors": [
+        {
+            "name": "Dominik Kvarda",
+            "email": "domco123@gmail.com"
+        }
+    ],
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Ulib\\": "src"
+        }
+    }
+}
