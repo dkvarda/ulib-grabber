@@ -2,8 +2,6 @@
 
 namespace Ulib\Grabber\Entity;
 
-include_once(__DIR__ . '/Exceptions/UlibException.php');
-
 use DOMDocument;
 use DOMXPath;
 use Ulib\Grabber\Exception\UlibException;

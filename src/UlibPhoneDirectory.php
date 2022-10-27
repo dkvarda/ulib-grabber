@@ -3,9 +3,6 @@
 use Ulib\Grabber\Entity\BaseUlibClass;
 use Ulib\Grabber\Entity\User;
 
-include_once(__DIR__ . '/BaseUlibClass.php');
-include_once(__DIR__ . '/Entity/User.php');
-
 class UlibPhoneDirectory extends BaseUlibClass
 {
     protected $baseUrl = 'https://www.ulib.sk/sk/kontakty/telefonny-zoznam/';

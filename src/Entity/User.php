@@ -1,7 +1,6 @@
 <?php
 
 namespace Ulib\Grabber\Entity;
-include_once('BaseEntity.php');
 
 class User extends BaseEntity
 {
