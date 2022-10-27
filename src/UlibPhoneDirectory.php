@@ -1,6 +1,7 @@
 <?php
 
-use Ulib\Grabber\Entity\BaseUlibClass;
+namespace Ulib\Grabber;
+
 use Ulib\Grabber\Entity\User;
 
 class UlibPhoneDirectory extends BaseUlibClass

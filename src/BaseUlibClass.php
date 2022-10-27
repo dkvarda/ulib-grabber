@@ -1,6 +1,6 @@
 <?php
 
-namespace Ulib\Grabber\Entity;
+namespace Ulib\Grabber;
 
 use DOMDocument;
 use DOMXPath;
