@@ -9,8 +9,13 @@ class UlibPhoneDirectory extends BaseUlibClass
     protected $baseUrl = 'https://www.ulib.sk/sk/kontakty/telefonny-zoznam/';
     
     private $urlReplace = [
-        'page' => 'd-4082824-p',
         'mail' => 'fieldF',
+        'firstname' => 'fieldB',
+        'lastname' => 'fieldA',
+        'department' => 'fieldC',
+        'room' => 'fieldD',
+        'phone' => 'fieldE',
+        'page' => 'd-4082824-p',
         'sort' => 'd-4082824-o',
         'column' => 'd-4082824-s'
     ];
