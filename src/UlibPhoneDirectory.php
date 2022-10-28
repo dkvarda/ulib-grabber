@@ -10,7 +10,9 @@ class UlibPhoneDirectory extends BaseUlibClass
     
     private $urlReplace = [
         'page' => 'd-4082824-p',
-        'mail' => 'fieldF'
+        'mail' => 'fieldF',
+        'sort' => 'd-4082824-o',
+        'column' => 'd-4082824-s'
     ];
 
     public function __construct(array $queryParams = [], string $proxy = null)
