@@ -63,19 +63,21 @@ class UlibPhoneDirectory extends BaseUlibClass
         }
         return null;
     }
-    
+
     public function getPaginator(): array
     {
         $xpath = $this->getXPath();
-        $xpathQuery="//div/p[@class='right']/a|//div/p[@class='right']/strong";
-        $xpathQueryActive="//div/p[@class='right']/strong";
+        $xpathQuery="//div/p[@class='right']//a|//div/p[@class='right']//strong";
+        $xpathQueryActive="//div/p[@class='right']//strong";
         $elements = $xpath->query($xpathQuery);
         $elementsActive = $xpath->query($xpathQueryActive);
         $out = [];
-        if (!is_null($elements) && !is_null($elementsActive)) {  
+        if (!is_null($elements) && !is_null($elementsActive)) {
             $pages = [];
             foreach ($elements as $element) {
-                $pages[] = $element->nodeValue;
+                if (is_numeric($element->nodeValue)) {
+                    $pages[] = $element->nodeValue;
+                }
             }
             foreach ($elementsActive as $elementActive) {
                 $out['activePage'] = $elementActive->nodeValue;
