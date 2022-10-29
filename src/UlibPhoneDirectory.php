@@ -4,6 +4,7 @@ namespace Ulib\Grabber;
 
 use Ulib\Grabber\Entity\User;
 use Ulib\Grabber\Exception\ParamException;
+use Ulib\Grabber\Exception\UlibException;
 
 class UlibPhoneDirectory extends BaseUlibClass
 {
@@ -21,6 +22,29 @@ class UlibPhoneDirectory extends BaseUlibClass
         'column' => 'd-4082824-s'
     ];
 
+    private $allowedParams = [
+        'sort' => [
+            'type' => Constants::TYPE_INT,
+            'values' => [0, 1]
+        ],
+        'd-4082824-o' => [
+            'type' => Constants::TYPE_INT,
+            'values' => [0, 1]
+        ],
+        'column' => [
+            'type' => Constants::TYPE_INT,
+            'values' => [0, 1, 2, 3, 4, 5]
+        ],
+        'd-4082824-s' => [
+            'type' => Constants::TYPE_INT,
+            'values' => [0, 1, 2, 3, 4, 5]
+        ]
+    ];
+
+    /**
+     * @throws UlibException
+     * @throws ParamException
+     */
     public function __construct(array $queryParams = [], string $proxy = null)
     {
         $this->validateParams($queryParams);
@@ -113,10 +137,34 @@ class UlibPhoneDirectory extends BaseUlibClass
      */
     private function validateParams(array $params)
     {
+        $this->allowedParams($params);
         $array = array_merge(array_keys($this->urlReplace), array_values($this->urlReplace));
         foreach ($params as $key => $param) {
             if (!in_array($key, $array)) {
                 throw new ParamException('Not supported query parameter: ' . $key, 400);
+            }
+        }
+    }
+
+    /**
+     * @param array $params
+     * @return void
+     * @throws ParamException
+     */
+    private function allowedParams(array $params)
+    {
+        foreach ($params as $key => $param) {
+            if (key_exists($key, $this->allowedParams)) {
+                $data = $this->allowedParams[$key];
+                if (key_exists('values', $data)) {
+                    $values = $data['values'];
+                    if (!in_array($param, $values)) {
+                        throw new ParamException(
+                            'Query parameter ' . $key . ' has invalid value. Allowed: ' . implode(', ', $values),
+                            400
+                        );
+                    }
+                }
             }
         }
     }
