@@ -3,11 +3,12 @@
 namespace Ulib\Grabber;
 
 use Ulib\Grabber\Entity\User;
+use Ulib\Grabber\Exception\ParamException;
 
 class UlibPhoneDirectory extends BaseUlibClass
 {
     protected $baseUrl = 'https://www.ulib.sk/sk/kontakty/telefonny-zoznam/';
-    
+
     private $urlReplace = [
         'mail' => 'fieldF',
         'firstname' => 'fieldB',
@@ -22,9 +23,10 @@ class UlibPhoneDirectory extends BaseUlibClass
 
     public function __construct(array $queryParams = [], string $proxy = null)
     {
+        $this->validateParams($queryParams);
         parent::__construct($this->queryParamsReplace($queryParams), $proxy);
     }
-    
+
     /**
      * @return User[]
      */
@@ -34,7 +36,7 @@ class UlibPhoneDirectory extends BaseUlibClass
         $xpathQuery="//tbody/tr[@class='odd']|//tbody/tr[@class='even']";
         $elements = $xpath->query($xpathQuery);
         $out = [];
-        if (!is_null($elements)) {  
+        if (!is_null($elements)) {
             foreach ($elements as $element) {
                 $parts = preg_split('/[\r\n]/', $element->nodeValue);
                 $user = new User();
@@ -56,7 +58,7 @@ class UlibPhoneDirectory extends BaseUlibClass
         $xpath = $this->getXPath();
         $xpathQuery="//span[@class='pagebanner']";
         $elements = $xpath->query($xpathQuery);
-        if (!is_null($elements)) {  
+        if (!is_null($elements)) {
             foreach ($elements as $element) {
                 return $element->nodeValue;
             }
@@ -87,6 +89,10 @@ class UlibPhoneDirectory extends BaseUlibClass
         return $out;
     }
 
+    /**
+     * @param array $queryParams
+     * @return array
+     */
     private function queryParamsReplace(array $queryParams): array
     {
         $out = [];
@@ -98,5 +104,20 @@ class UlibPhoneDirectory extends BaseUlibClass
             }
         }
         return $out;
+    }
+
+    /**
+     * @param array $params
+     * @return void
+     * @throws ParamException
+     */
+    private function validateParams(array $params)
+    {
+        $array = array_merge(array_keys($this->urlReplace), array_values($this->urlReplace));
+        foreach ($params as $key => $param) {
+            if (!in_array($key, $array)) {
+                throw new ParamException('Not supported query parameter', 400);
+            }
+        }
     }
 }
