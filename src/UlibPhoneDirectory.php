@@ -102,11 +102,13 @@ class UlibPhoneDirectory extends BaseUlibClass
             $pages = [];
             foreach ($elements as $element) {
                 if (is_numeric($element->nodeValue)) {
-                    $pages[] = $element->nodeValue;
+                    $pages[] = (int)$element->nodeValue;
                 }
             }
             foreach ($elementsActive as $elementActive) {
-                $out['activePage'] = $elementActive->nodeValue;
+                if (is_numeric($elementActive->nodeValue)) {
+                    $out['activePage'] = (int)$elementActive->nodeValue;
+                }
             }
             $out['pages'] = $pages;
         }
