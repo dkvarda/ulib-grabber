@@ -40,7 +40,7 @@ class BaseUlibClass
     {
         $result = curl_exec($ch);
         if (curl_errno($ch)) {
-            throw new UlibException(curl_error($ch), 400);
+            throw new UlibException(curl_error($ch), 404);
         }
         curl_close($ch);
         return $result;
