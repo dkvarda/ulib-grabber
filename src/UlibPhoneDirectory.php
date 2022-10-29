@@ -116,7 +116,7 @@ class UlibPhoneDirectory extends BaseUlibClass
         $array = array_merge(array_keys($this->urlReplace), array_values($this->urlReplace));
         foreach ($params as $key => $param) {
             if (!in_array($key, $array)) {
-                throw new ParamException('Not supported query parameter ' . $key, 400);
+                throw new ParamException('Not supported query parameter: ' . $key, 400);
             }
         }
     }
