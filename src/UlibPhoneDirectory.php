@@ -22,7 +22,7 @@ class UlibPhoneDirectory extends BaseUlibClass
         'column' => 'd-4082824-s'
     ];
 
-    private $allowedParams = [
+    protected $allowedParams = [
         'sort' => [
             'type' => Constants::TYPE_INT,
             'values' => [0, 1]
@@ -142,29 +142,6 @@ class UlibPhoneDirectory extends BaseUlibClass
         foreach ($params as $key => $param) {
             if (!in_array($key, $array)) {
                 throw new ParamException('Not supported query parameter: ' . $key, 400);
-            }
-        }
-    }
-
-    /**
-     * @param array $params
-     * @return void
-     * @throws ParamException
-     */
-    private function allowedParams(array $params)
-    {
-        foreach ($params as $key => $param) {
-            if (key_exists($key, $this->allowedParams)) {
-                $data = $this->allowedParams[$key];
-                if (key_exists('values', $data)) {
-                    $values = $data['values'];
-                    if (!in_array($param, $values)) {
-                        throw new ParamException(
-                            'Query parameter ' . $key . ' has invalid value. Allowed: ' . implode(', ', $values),
-                            400
-                        );
-                    }
-                }
             }
         }
     }

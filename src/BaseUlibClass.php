@@ -4,6 +4,7 @@ namespace Ulib\Grabber;
 
 use DOMDocument;
 use DOMXPath;
+use Ulib\Grabber\Exception\ParamException;
 use Ulib\Grabber\Exception\UlibException;
 
 class BaseUlibClass
@@ -13,6 +14,8 @@ class BaseUlibClass
     protected $proxy;
      
     private $content;
+
+    protected $allowedParams = [];
 
     /**
      * @throws UlibException
@@ -52,7 +55,30 @@ class BaseUlibClass
         $doc->loadHTML($this->getContent(), LIBXML_NOWARNING | LIBXML_NOERROR);
         return new DOMXpath($doc);
     }
-    
+
+    /**
+     * @param array $params
+     * @return void
+     * @throws ParamException
+     */
+    protected function allowedParams(array $params)
+    {
+        foreach ($params as $key => $param) {
+            if (key_exists($key, $this->allowedParams)) {
+                $data = $this->allowedParams[$key];
+                if (key_exists('values', $data)) {
+                    $values = $data['values'];
+                    if (!in_array($param, $values)) {
+                        throw new ParamException(
+                            'Query parameter ' . $key . ' has invalid value. Allowed: ' . implode(', ', $values),
+                            400
+                        );
+                    }
+                }
+            }
+        }
+    }
+
     private function createCurl(array $queryParams = [])
     {
         $ch = curl_init();
