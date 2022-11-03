@@ -2,7 +2,7 @@
 
 namespace Ulib\Grabber\Entity;
 
-class BaseEntity
+interface IEntity
 {
 
 }

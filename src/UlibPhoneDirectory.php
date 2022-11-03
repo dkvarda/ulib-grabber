@@ -63,8 +63,7 @@ class UlibPhoneDirectory extends BaseUlibClass
         if (!is_null($elements)) {
             foreach ($elements as $element) {
                 $parts = preg_split('/[\r\n]/', $element->nodeValue);
-                $user = new User();
-                $out[] = $user->patch([
+                $out[] = $this->hydrator->patch(new User(), [
                     'firstname' => trim($parts[7]),
                     'lastname' => trim($parts[3]),
                     'department' => trim($parts[11]),

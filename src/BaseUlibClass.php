@@ -6,6 +6,7 @@ use DOMDocument;
 use DOMXPath;
 use Ulib\Grabber\Exception\ParamException;
 use Ulib\Grabber\Exception\UlibException;
+use Ulib\Grabber\Hydrator\Hydrator;
 
 class BaseUlibClass
 {
@@ -16,12 +17,15 @@ class BaseUlibClass
     private $content;
 
     protected $allowedParams = [];
-
+    
+    public $hydrator;
+    
     /**
      * @throws UlibException
      */
     public function __construct(array $queryParams = [], string $proxy = null)
     {
+        $this->hydrator = new Hydrator();
         $this->proxy = $proxy;
         $this->setContent($this->getCurlData($this->createCurl($queryParams)));
     }

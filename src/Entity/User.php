@@ -2,7 +2,7 @@
 
 namespace Ulib\Grabber\Entity;
 
-class User extends BaseEntity
+class User extends BaseEntity implements IEntity
 {
     private $firstname;
 
