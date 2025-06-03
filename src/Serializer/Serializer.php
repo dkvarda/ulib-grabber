@@ -60,9 +60,10 @@ final class Serializer
 
     private static function doNotSerialize($object): bool
     {
-        if ($object->getDocComment() === false || strpos('@ignore', $object->getDocComment()) !== false) {
-            return true;
+        $comment = $object->getDocComment();
+        if ($comment !== false && strpos($comment, '@ignore') !== false) {
+            return false;
         }
-        return false;
+        return true;
     }
 }
