@@ -1,16 +1,38 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ulib\Grabber;
 
+use DOMElement;
+use DOMNode;
 use Ulib\Grabber\Entity\User;
 use Ulib\Grabber\Exception\ParamException;
 use Ulib\Grabber\Exception\UlibException;
 
 class UlibPhoneDirectory extends BaseUlibClass
 {
-    protected $baseUrl = 'https://www.ulib.sk/sk/kontakty/telefonny-zoznam/';
+    private const XPATH_USER_ROWS = "//tbody/tr[contains(@class, 'odd') or contains(@class, 'even')]";
+    private const XPATH_PAGE_BANNER = "//span[@class='pagebanner']";
+    private const XPATH_PAGINATOR_ITEMS = "//div/p[@class='right']//a|//div/p[@class='right']//strong";
+    private const XPATH_PAGINATOR_ACTIVE = "//div/p[@class='right']//strong";
+    private const MIN_USER_COLUMNS = 6;
 
-    private $urlReplace = [
+    private const USER_COLUMN_MAP = [
+        0 => 'lastname',
+        1 => 'firstname',
+        2 => 'department',
+        3 => 'room',
+        4 => 'phone',
+        5 => 'mail',
+    ];
+
+    protected string $baseUrl = 'https://www.ulib.sk/sk/kontakty/telefonny-zoznam/';
+
+    /**
+     * @var array<string, string>
+     */
+    private array $urlReplace = [
         'mail' => 'fieldF',
         'firstname' => 'fieldB',
         'lastname' => 'fieldA',
@@ -19,33 +41,33 @@ class UlibPhoneDirectory extends BaseUlibClass
         'phone' => 'fieldE',
         'page' => 'd-4082824-p',
         'sort' => 'd-4082824-o',
-        'column' => 'd-4082824-s'
+        'column' => 'd-4082824-s',
     ];
 
-    protected $allowedParams = [
+    protected array $allowedParams = [
         'sort' => [
             'type' => Constants::TYPE_INT,
-            'values' => [0, 1]
+            'values' => [0, 1],
         ],
         'd-4082824-o' => [
             'type' => Constants::TYPE_INT,
-            'values' => [0, 1]
+            'values' => [0, 1],
         ],
         'column' => [
             'type' => Constants::TYPE_INT,
-            'values' => [0, 1, 2, 3, 4, 5]
+            'values' => [0, 1, 2, 3, 4, 5],
         ],
         'd-4082824-s' => [
             'type' => Constants::TYPE_INT,
-            'values' => [0, 1, 2, 3, 4, 5]
-        ]
+            'values' => [0, 1, 2, 3, 4, 5],
+        ],
     ];
 
     /**
      * @throws UlibException
      * @throws ParamException
      */
-    public function __construct(array $queryParams = [], string $proxy = null)
+    public function __construct(array $queryParams = [], ?string $proxy = null)
     {
         $this->validateParams($queryParams);
         parent::__construct($this->queryParamsReplace($queryParams), $proxy);
@@ -57,93 +79,107 @@ class UlibPhoneDirectory extends BaseUlibClass
     public function getUsers(): array
     {
         $xpath = $this->getXPath();
-        $xpathQuery="//tbody/tr[@class='odd']|//tbody/tr[@class='even']";
-        $elements = $xpath->query($xpathQuery);
+        $rows = $xpath->query(self::XPATH_USER_ROWS);
         $out = [];
-        if (!is_null($elements)) {
-            foreach ($elements as $element) {
-                $parts = preg_split('/[\r\n]/', $element->nodeValue);
-                $out[] = $this->hydrator->patch(new User(), [
-                    'firstname' => trim($parts[7]),
-                    'lastname' => trim($parts[3]),
-                    'department' => trim($parts[11]),
-                    'room' => trim($parts[15]),
-                    'phone' => trim($parts[19]),
-                    'mail' => trim($parts[23])
-                ]);
-            }
+
+        if ($rows === false || $rows === null) {
+            return $out;
         }
+
+        foreach ($rows as $row) {
+            if (!$row instanceof DOMElement) {
+                continue;
+            }
+
+            $tdNodes = $xpath->query('./td', $row);
+            if ($tdNodes === false || $tdNodes === null || $tdNodes->length < self::MIN_USER_COLUMNS) {
+                continue;
+            }
+
+            $userData = [];
+            foreach (self::USER_COLUMN_MAP as $index => $key) {
+                $userData[$key] = $this->nodeText($tdNodes->item($index));
+            }
+
+            $out[] = $this->hydrator->patch(new User(), $userData);
+        }
+
         return $out;
     }
 
-    public function getPageResult()
+    public function getPageResult(): ?string
     {
         $xpath = $this->getXPath();
-        $xpathQuery="//span[@class='pagebanner']";
-        $elements = $xpath->query($xpathQuery);
-        if (!is_null($elements)) {
-            foreach ($elements as $element) {
-                return $element->nodeValue;
-            }
+        $elements = $xpath->query(self::XPATH_PAGE_BANNER);
+        if ($elements !== false && $elements !== null && $elements->item(0) instanceof DOMNode) {
+            return trim($elements->item(0)->nodeValue ?? '');
         }
+
         return null;
     }
 
+    /**
+     * @return array{activePage?: int, pages?: int[]}
+     */
     public function getPaginator(): array
     {
         $xpath = $this->getXPath();
-        $xpathQuery="//div/p[@class='right']//a|//div/p[@class='right']//strong";
-        $xpathQueryActive="//div/p[@class='right']//strong";
-        $elements = $xpath->query($xpathQuery);
-        $elementsActive = $xpath->query($xpathQueryActive);
+        $elements = $xpath->query(self::XPATH_PAGINATOR_ITEMS);
+        $elementsActive = $xpath->query(self::XPATH_PAGINATOR_ACTIVE);
         $out = [];
-        if (!is_null($elements) && !is_null($elementsActive)) {
-            $pages = [];
-            foreach ($elements as $element) {
-                if (is_numeric($element->nodeValue)) {
-                    $pages[] = (int)$element->nodeValue;
-                }
-            }
-            foreach ($elementsActive as $elementActive) {
-                if (is_numeric($elementActive->nodeValue)) {
-                    $out['activePage'] = (int)$elementActive->nodeValue;
-                }
-            }
-            $out['pages'] = $pages;
+
+        if ($elements === false || $elements === null || $elementsActive === false || $elementsActive === null) {
+            return $out;
         }
+
+        $pages = [];
+        foreach ($elements as $element) {
+            $value = trim($element->nodeValue ?? '');
+            if (is_numeric($value)) {
+                $pages[] = (int) $value;
+            }
+        }
+
+        foreach ($elementsActive as $elementActive) {
+            $value = trim($elementActive->nodeValue ?? '');
+            if (is_numeric($value)) {
+                $out['activePage'] = (int) $value;
+                break;
+            }
+        }
+
+        $out['pages'] = array_values(array_unique($pages));
+
         return $out;
     }
 
-    /**
-     * @param array $queryParams
-     * @return array
-     */
     private function queryParamsReplace(array $queryParams): array
     {
         $out = [];
         foreach ($queryParams as $key => $value) {
-            if (array_key_exists($key, $this->urlReplace)) {
-                $out[$this->urlReplace[$key]] = $value;
-            } else {
-                $out[$key] = $value;
-            }
+            $out[$this->urlReplace[$key] ?? $key] = $value;
         }
+
         return $out;
     }
 
     /**
-     * @param array $params
-     * @return void
      * @throws ParamException
      */
-    private function validateParams(array $params)
+    private function validateParams(array $params): void
     {
         $this->allowedParams($params);
-        $array = array_merge(array_keys($this->urlReplace), array_values($this->urlReplace));
-        foreach ($params as $key => $param) {
-            if (!in_array($key, $array)) {
+        $allowedKeys = array_flip(array_merge(array_keys($this->urlReplace), array_values($this->urlReplace)));
+
+        foreach ($params as $key => $_param) {
+            if (!array_key_exists((string) $key, $allowedKeys)) {
                 throw new ParamException('Not supported query parameter: ' . $key, 400);
             }
         }
+    }
+
+    private function nodeText(?DOMNode $node): string
+    {
+        return trim($node?->textContent ?? '');
     }
 }

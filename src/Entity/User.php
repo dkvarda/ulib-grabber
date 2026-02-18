@@ -1,25 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ulib\Grabber\Entity;
 
 class User extends BaseEntity implements IEntity
 {
-    private $firstname;
+    private ?string $firstname = null;
 
-    private $lastname;
+    private ?string $lastname = null;
 
-    private $department;
+    private ?string $department = null;
 
-    private $room;
+    private ?string $room = null;
 
     /**
      * @ignore
      */
-    private $phone;
+    private ?string $phone = null;
 
-    private $mail;
+    private ?string $mail = null;
 
-    public function getFirstname()
+    public function getFirstname(): ?string
     {
         return $this->firstname;
     }
@@ -27,10 +29,11 @@ class User extends BaseEntity implements IEntity
     public function setFirstname(string $firstname): self
     {
         $this->firstname = $firstname;
+
         return $this;
     }
 
-    public function getLastname()
+    public function getLastname(): ?string
     {
         return $this->lastname;
     }
@@ -38,10 +41,11 @@ class User extends BaseEntity implements IEntity
     public function setLastname(string $lastname): self
     {
         $this->lastname = $lastname;
+
         return $this;
     }
 
-    public function getDepartment()
+    public function getDepartment(): ?string
     {
         return $this->department;
     }
@@ -49,10 +53,11 @@ class User extends BaseEntity implements IEntity
     public function setDepartment(string $department): self
     {
         $this->department = $department;
+
         return $this;
     }
 
-    public function getRoom()
+    public function getRoom(): ?string
     {
         return $this->room;
     }
@@ -60,10 +65,11 @@ class User extends BaseEntity implements IEntity
     public function setRoom(string $room): self
     {
         $this->room = $room;
+
         return $this;
     }
 
-    public function getPhone()
+    public function getPhone(): ?string
     {
         return $this->phone;
     }
@@ -71,10 +77,11 @@ class User extends BaseEntity implements IEntity
     public function setPhone(string $phone): self
     {
         $this->phone = $phone;
+
         return $this;
     }
 
-    public function getMail()
+    public function getMail(): ?string
     {
         return $this->mail;
     }
@@ -82,47 +89,62 @@ class User extends BaseEntity implements IEntity
     public function setMail(string $mail): self
     {
         $this->mail = $mail;
+
         return $this;
     }
 
-    public function getLastnameWithoutTitles()
+    public function getLastnameWithoutTitles(): ?string
     {
-        return explode(',', $this->getLastname())[0];
+        if ($this->lastname === null || $this->lastname === '') {
+            return null;
+        }
+
+        return $this->splitCsvValue($this->lastname)[0] ?? null;
     }
 
-    public function getTitles()
+    public function getTitles(): ?array
     {
-        $explode = explode(',', $this->getLastname());
-        if (count($explode) > 1) {
-            $titles = [];
-            $count = 1;
-            foreach ($explode as $value) {
-                if ($count > 1) {
-                    $titles[] = trim($value);
-                }
-                $count++;
-            }
-            return $titles;
+        if ($this->lastname === null || $this->lastname === '') {
+            return null;
         }
-        return null;
+
+        $explode = $this->splitCsvValue($this->lastname);
+        if (count($explode) <= 1) {
+            return null;
+        }
+
+        $titles = array_values(array_filter(array_slice($explode, 1), static fn (string $value): bool => $value !== ''));
+
+        return $titles !== [] ? $titles : null;
     }
 
     public function getPhoneNumbers(): array
     {
-        $phones = [];
-        $explode = explode(',', $this->getPhone());
-        if (count($explode) > 1) {
-            foreach ($explode as $value) {
-                $phones[] = (int)$value;
-            }
-            return $phones;
+        if ($this->phone === null || trim($this->phone) === '') {
+            return [];
         }
-        $phones[] = (int)$this->getPhone();
+
+        $phones = [];
+        foreach ($this->splitCsvValue($this->phone) as $value) {
+            $normalized = preg_replace('/\D+/', '', $value) ?? '';
+            if ($normalized !== '') {
+                $phones[] = (int) $normalized;
+            }
+        }
+
         return $phones;
     }
 
     public function getCleanName(): string
     {
-        return $this->getFirstname() . ' ' . $this->getLastnameWithoutTitles();
+        return trim(sprintf('%s %s', $this->firstname ?? '', $this->getLastnameWithoutTitles() ?? ''));
+    }
+
+    /**
+     * @return string[]
+     */
+    private function splitCsvValue(string $value): array
+    {
+        return array_values(array_filter(array_map('trim', explode(',', $value)), static fn (string $item): bool => $item !== ''));
     }
 }

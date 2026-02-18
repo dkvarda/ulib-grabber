@@ -8,7 +8,7 @@
         }
     ],
     "require": {
-        "php": ">=7.3",
+        "php": "^8.4",
         "ext-dom": "*",
         "ext-curl": "*",
         "ext-libxml": "*"
@@ -17,5 +17,8 @@
         "psr-4": {
             "Ulib\\Grabber\\": "src"
         }
+    },
+    "config": {
+        "sort-packages": true
     }
 }
