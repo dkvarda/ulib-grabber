@@ -4,18 +4,16 @@ declare(strict_types=1);
 
 namespace Ulib\Grabber;
 
-use CurlHandle;
 use DOMDocument;
 use DOMXPath;
 use Ulib\Grabber\Exception\ParamException;
 use Ulib\Grabber\Exception\UlibException;
+use Ulib\Grabber\Http\CurlHttpClient;
+use Ulib\Grabber\Http\HttpClientInterface;
 use Ulib\Grabber\Hydrator\Hydrator;
 
 class BaseUlibClass
 {
-    private const DEFAULT_CONNECT_TIMEOUT = 10;
-    private const DEFAULT_TIMEOUT = 30;
-
     protected string $baseUrl = '';
 
     protected ?string $proxy;
@@ -29,15 +27,20 @@ class BaseUlibClass
     protected array $allowedParams = [];
 
     public Hydrator $hydrator;
+    protected HttpClientInterface $httpClient;
 
     /**
      * @throws UlibException
      */
-    public function __construct(array $queryParams = [], ?string $proxy = null)
-    {
+    public function __construct(
+        array $queryParams = [],
+        ?string $proxy = null,
+        ?HttpClientInterface $httpClient = null
+    ) {
+        $this->httpClient = $httpClient ?? new CurlHttpClient();
         $this->hydrator = new Hydrator();
         $this->proxy = $proxy;
-        $this->setContent($this->getCurlData($this->createCurl($queryParams)));
+        $this->setContent($this->httpClient->get($this->getUrlWithParameters($queryParams), $this->proxy));
     }
 
     protected function getContent(): string
@@ -49,25 +52,6 @@ class BaseUlibClass
     {
         $this->content = $data;
         $this->xpath = null;
-    }
-
-    /**
-     * @throws UlibException
-     */
-    protected function getCurlData(CurlHandle $ch): string
-    {
-        $result = curl_exec($ch);
-
-        if ($result === false) {
-            $error = curl_error($ch);
-            curl_close($ch);
-
-            throw new UlibException($error !== '' ? $error : 'Unable to fetch remote data.', 500);
-        }
-
-        curl_close($ch);
-
-        return $result;
     }
 
     protected function getXPath(): DOMXPath
@@ -107,33 +91,6 @@ class BaseUlibClass
                 );
             }
         }
-    }
-
-    /**
-     * @throws UlibException
-     */
-    private function createCurl(array $queryParams = []): CurlHandle
-    {
-        $ch = curl_init();
-        if ($ch === false) {
-            throw new UlibException('Unable to initialize cURL.', 500);
-        }
-
-        curl_setopt_array($ch, [
-            CURLOPT_URL => $this->getUrlWithParameters($queryParams),
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_SSL_VERIFYPEER => true,
-            CURLOPT_SSL_VERIFYHOST => 2,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_CONNECTTIMEOUT => self::DEFAULT_CONNECT_TIMEOUT,
-            CURLOPT_TIMEOUT => self::DEFAULT_TIMEOUT,
-        ]);
-
-        if ($this->proxy !== null && $this->proxy !== '') {
-            curl_setopt($ch, CURLOPT_PROXY, $this->proxy);
-        }
-
-        return $ch;
     }
 
     private function getUrlWithParameters(array $queryParams = []): string
